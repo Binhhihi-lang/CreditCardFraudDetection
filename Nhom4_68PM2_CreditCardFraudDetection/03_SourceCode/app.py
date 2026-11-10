@@ -32,10 +32,7 @@ from predict import MODEL_PATH, load_model, predict, RAW_FEATURES
 # Giao diện Sidebar & Thông tin Nhóm
 # --------------------------------------------------------------------------- #
 with st.sidebar:
-    st.image(
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Huce_logo.png/640px-Huce_logo.png",
-        width=110,
-    )
+    # Không tải logo từ Wikimedia: URL đó trả 403 khi gọi từ container/lúc demo offline.
     st.title("💳 Fraud Detection")
     st.markdown("**BTL Học máy (HUCE - 608807)**")
     st.markdown("**Nhóm 4 - Lớp: 68PM2**")
@@ -69,7 +66,10 @@ with st.sidebar:
         max_value=0.99,
         value=default_threshold,
         step=0.01,
-        help="Giao dịch có xác suất >= ngưỡng này sẽ bị gắn cờ là Gian lận (Fraud). Mặc định 0.4671 là ngưỡng tối ưu F2-score trên tập Train.",
+        help=(
+            "Giao dịch có xác suất >= ngưỡng này sẽ bị gắn cờ là Gian lận (Fraud). "
+            "Mặc định 0.4671 là ngưỡng tối ưu F2-score trên tập Train."
+        ),
     )
     st.caption(f"Ngưỡng tối ưu lưu cùng mô hình: **{default_threshold:.4f}**")
 
@@ -78,10 +78,14 @@ with st.sidebar:
 # --------------------------------------------------------------------------- #
 st.markdown(
     """
-    <div style='background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 22px; border-radius: 10px; color: white; margin-bottom: 25px;'>
-        <h1 style='margin:0; font-size: 28px; color: #ffffff;'>HỆ THỐNG PHÁT HIỆN GIAO DỊCH GIAN LẬN THẺ TÍN DỤNG</h1>
+    <div style='background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                padding: 22px; border-radius: 10px; color: white; margin-bottom: 25px;'>
+        <h1 style='margin:0; font-size: 28px; color: #ffffff;'>
+            HỆ THỐNG PHÁT HIỆN GIAO DỊCH GIAN LẬN THẺ TÍN DỤNG
+        </h1>
         <p style='margin: 6px 0 0 0; font-size: 15px; opacity: 0.9;'>
-            Ứng dụng Học máy Phân loại Mất cân bằng Cực độ (Imbalanced Classification) | Nhóm 4 - Lớp 68PM2 - ĐH Xây dựng Hà Nội (HUCE)
+            Ứng dụng Học máy Phân loại Mất cân bằng Cực độ (Imbalanced Classification)
+            | Nhóm 4 - Lớp 68PM2 - ĐH Xây dựng Hà Nội (HUCE)
         </p>
     </div>
     """,
@@ -104,13 +108,36 @@ tab1, tab2, tab3, tab4 = st.tabs(
 with tab1:
     st.subheader("Kiểm tra Rủi ro cho một Giao dịch Mới")
     st.write(
-        "Nhập các thông số giao dịch hoặc chọn mẫu thử nghiệm có sẵn để kiểm tra hệ thống suy luận thời gian thực."
+        "Nhập các thông số giao dịch hoặc chọn mẫu thử nghiệm có sẵn để kiểm tra "
+        "hệ thống suy luận thời gian thực."
     )
 
     sample_csv_path = Path(__file__).resolve().parent / "data" / "sample_transactions.csv"
     sample_df = None
     if sample_csv_path.exists():
         sample_df = pd.read_csv(sample_csv_path)
+
+    @st.cache_data(show_spinner=False)
+    def _sample_row_indexes(sample: pd.DataFrame) -> dict:
+        """Chọn ca gian lận/hợp lệ tiêu biểu để demo.
+
+        Không dùng ``.iloc[0]``: ca gian lận đầu tiên trong file mẫu lại đúng là
+        ca mô hình bỏ sót (p ≈ 0,0002), bấm "Nạp mẫu Gian lận" sẽ ra kết quả
+        "HỢP LỆ" và gây hiểu nhầm. Ở đây chọn ca gian lận có xác suất cao nhất và
+        ca hợp lệ có xác suất thấp nhất.
+
+        ``sample`` là tham số (không phải biến closure) để cache_data băm được
+        nội dung file mẫu — cache_data không theo dõi biến bên ngoài hàm.
+        """
+        scores = predict(sample, threshold=0.5)["fraud_probability"]
+        fraud_idx = sample[sample["Class"] == 1].index
+        legit_idx = sample[sample["Class"] == 0].index
+        return {
+            "fraud": int(scores[fraud_idx].idxmax()),
+            "legit": int(scores[legit_idx].idxmin()),
+            "fraud_prob": float(scores[fraud_idx].max()),
+            "legit_prob": float(scores[legit_idx].min()),
+        }
 
     col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
     with col_btn1:
@@ -123,16 +150,26 @@ with tab1:
     initial_values["Time"] = 45000.0
     initial_values["Amount"] = 125.50
 
-    if load_legit and sample_df is not None:
-        legit_row = sample_df[sample_df["Class"] == 0].iloc[0]
+    if (load_legit or load_fraud) and sample_df is not None:
+        picked = _sample_row_indexes(sample_df)
+        row = sample_df.loc[picked["fraud" if load_fraud else "legit"]]
         for col in RAW_FEATURES:
-            initial_values[col] = float(legit_row[col])
-        st.info("Đã nạp mẫu giao dịch HỢP LỆ từ tập mẫu.")
-    elif load_fraud and sample_df is not None:
-        fraud_row = sample_df[sample_df["Class"] == 1].iloc[0]
-        for col in RAW_FEATURES:
-            initial_values[col] = float(fraud_row[col])
-        st.warning("Đã nạp mẫu giao dịch GIAN LẬN thực tế từ tập mẫu.")
+            initial_values[col] = float(row[col])
+        st.session_state["sample_version"] = st.session_state.get("sample_version", 0) + 1
+        if load_fraud:
+            st.warning(
+                f"Đã nạp ca GIAN LẬN thật (Class = 1), xác suất mô hình gán: "
+                f"**{picked['fraud_prob']:.2%}**."
+            )
+        else:
+            st.info(
+                f"Đã nạp ca HỢP LỆ thật (Class = 0), xác suất mô hình gán: "
+                f"**{picked['legit_prob']:.2%}**."
+            )
+
+    # number_input giữ giá trị theo `key`, nên đổi key sau mỗi lần nạp mẫu để các ô
+    # được dựng lại với giá trị của mẫu mới thay vì giữ giá trị người dùng đã nhập.
+    sample_version = st.session_state.get("sample_version", 0)
 
     with st.form("single_transaction_form"):
         col_amt, col_time = st.columns(2)
@@ -143,6 +180,7 @@ with tab1:
                 max_value=100000.0,
                 value=float(initial_values["Amount"]),
                 step=10.0,
+                key=f"amount_{sample_version}",
             )
         with col_time:
             time_val = st.number_input(
@@ -152,34 +190,49 @@ with tab1:
                 value=float(initial_values["Time"]),
                 step=100.0,
                 help=f"Tương đương giờ trong ngày: {(float(initial_values['Time']) % 86400) / 3600:.1f}h",
+                key=f"time_{sample_version}",
             )
 
         st.markdown("**Các biến PCA nhạy cảm nhất (Quyết định mức độ rủi ro):**")
-        col_v1, col_v2, col_v3, col_v4 = st.columns(4)
-        with col_v1:
-            v14_val = st.number_input("V14 (Tương quan âm mạnh):", value=float(initial_values["V14"]))
-            v12_val = st.number_input("V12 (Tương quan âm):", value=float(initial_values["V12"]))
-        with col_v2:
-            v10_val = st.number_input("V10 (Tương quan âm):", value=float(initial_values["V10"]))
-            v17_val = st.number_input("V17 (Tương quan âm):", value=float(initial_values["V17"]))
-        with col_v3:
-            v4_val = st.number_input("V4 (Tương quan dương):", value=float(initial_values["V4"]))
-            v11_val = st.number_input("V11 (Tương quan dương):", value=float(initial_values["V11"]))
-        with col_v4:
-            v2_val = st.number_input("V2:", value=float(initial_values["V2"]))
-            v3_val = st.number_input("V3:", value=float(initial_values["V3"]))
+        TOP_V_INPUTS = [
+            ("V14", "V14 (Tương quan âm mạnh):"),
+            ("V12", "V12 (Tương quan âm):"),
+            ("V10", "V10 (Tương quan âm):"),
+            ("V17", "V17 (Tương quan âm):"),
+            ("V4", "V4 (Tương quan dương):"),
+            ("V11", "V11 (Tương quan dương):"),
+            ("V2", "V2:"),
+            ("V3", "V3:"),
+        ]
+        top_vals = {}
+        for group_of_two in range(4):
+            with st.columns(4)[group_of_two]:
+                for name, label in TOP_V_INPUTS[group_of_two * 2: group_of_two * 2 + 2]:
+                    top_vals[name] = st.number_input(
+                        label,
+                        value=float(initial_values[name]),
+                        key=f"{name.lower()}_{sample_version}",
+                    )
+        v14_val, v12_val = top_vals["V14"], top_vals["V12"]
+        v10_val, v17_val = top_vals["V10"], top_vals["V17"]
+        v4_val, v11_val = top_vals["V4"], top_vals["V11"]
+        v2_val, v3_val = top_vals["V2"], top_vals["V3"]
 
-        with st.expander("Hiển thị & Chỉnh sửa toàn bộ các biến V còn lại (V1, V5-V9, V13, V15-V16, V18-V28)"):
-            other_cols = [c for c in [f"V{i}" for i in range(1, 29)] if c not in ["V14", "V12", "V10", "V17", "V4", "V11", "V2", "V3"]]
+        with st.expander(
+            "Hiển thị & Chỉnh sửa toàn bộ các biến V còn lại "
+            "(V1, V5-V9, V13, V15-V16, V18-V28)"
+        ):
+            shown = [name for name, _ in TOP_V_INPUTS]
+            other_cols = [f"V{i}" for i in range(1, 29) if f"V{i}" not in shown]
             sub_cols = st.columns(4)
             other_v_inputs = {}
             for idx, col_name in enumerate(other_cols):
                 with sub_cols[idx % 4]:
                     other_v_inputs[col_name] = st.number_input(
-                        col_name, value=float(initial_values[col_name]), key=f"inp_{col_name}"
+                        col_name, value=float(initial_values[col_name]), key=f"inp_{col_name}_{sample_version}"
                     )
 
-        submitted = st.form_submit_button("🚀 Phân tích Rủi ro Giao dịch", use_container_width=True)
+        submitted = st.form_submit_button("🚀 Phân tích Rủi ro Giao dịch", width="stretch")
 
     if submitted:
         # Gom dữ liệu thành DataFrame 1 dòng
@@ -221,20 +274,25 @@ with tab1:
                 if is_fraud == 1:
                     st.error(
                         f"""
-                        🚨 **CẢNH BÁO: GIAO DỊCH CÓ DẤU HIỆU GIAN LẬN!**  
-                        * Xác suất rủi ro **{prob * 100:.2f}%** vượt quá ngưỡng an toàn **{threshold * 100:.1f}%**.  
-                        * **Khuyến nghị hệ thống Core Banking:**  
-                          1. Lập tức tạm giữ giao dịch (Hold Transaction).  
-                          2. Kích hoạt xác thực sinh trắc học hoặc OTP qua tin nhắn SMS/SmartOTP.  
-                          3. Thông báo cho bộ phận Phòng chống Gian lận (Fraud Operations Unit).
+                        🚨 **CẢNH BÁO: GIAO DỊCH CÓ DẤU HIỆU GIAN LẬN!**
+                        * Xác suất rủi ro **{prob * 100:.2f}%** vượt quá ngưỡng an toàn
+                          **{threshold * 100:.1f}%**.
+                        * **Khuyến nghị hệ thống Core Banking:**
+                          1. Lập tức tạm giữ giao dịch (Hold Transaction).
+                          2. Kích hoạt xác thực sinh trắc học hoặc OTP qua tin nhắn
+                             SMS/SmartOTP.
+                          3. Thông báo cho bộ phận Phòng chống Gian lận
+                             (Fraud Operations Unit).
                         """
                     )
                 else:
                     st.success(
                         f"""
-                         **GIAO DỊCH HỢP LỆ (AN TOÀN)**  
-                        * Xác suất rủi ro **{prob * 100:.2f}%** nằm trong vùng kiểm soát an toàn (< {threshold * 100:.1f}%).  
-                        * **Khuyến nghị hệ thống Core Banking:** Phê duyệt giao dịch (Auto-Approved).
+                         **GIAO DỊCH HỢP LỆ (AN TOÀN)**
+                        * Xác suất rủi ro **{prob * 100:.2f}%** nằm trong vùng kiểm soát
+                          an toàn (< {threshold * 100:.1f}%).
+                        * **Khuyến nghị hệ thống Core Banking:** Phê duyệt giao dịch
+                          (Auto-Approved).
                         """
                     )
         except Exception as e:
@@ -245,7 +303,10 @@ with tab1:
 # --------------------------------------------------------------------------- #
 with tab2:
     st.subheader("Quét Rủi ro Hàng loạt từ File Giao dịch (Batch Scanning)")
-    st.write("Tải lên file CSV chứa danh sách các giao dịch (cần có các cột `Time`, `V1`...`V28`, `Amount`).")
+    st.write(
+        "Tải lên file CSV chứa danh sách các giao dịch "
+        "(cần có các cột `Time`, `V1`...`V28`, `Amount`)."
+    )
 
     uploaded_file = st.file_uploader("Chọn file CSV:", type=["csv"])
 
@@ -279,11 +340,13 @@ with tab2:
                 # Kiểm tra nếu file có cột nhãn thật Class
                 if "Class" in res_batch.columns:
                     n_true_frauds = int(res_batch["Class"].sum())
-                    tp = int(((res_batch["Class"] == 1) & (res_batch["is_fraud"] == 1)).sum())
+                    tp = int(((res_batch["Class"] == 1)
+                              & (res_batch["is_fraud"] == 1)).sum())
                     recall_val = (tp / n_true_frauds) * 100 if n_true_frauds > 0 else 0.0
                     st.info(
-                        f"📊 **Đối chiếu thực tế:** Tập dữ liệu có **{n_true_frauds}** ca gian lận thật. "
-                        f"Mô hình đã bắt trúng **{tp}/{n_true_frauds}** ca (Tỷ lệ Recall đạt **{recall_val:.1f}%**)."
+                        f"📊 **Đối chiếu thực tế:** Tập dữ liệu có **{n_true_frauds}** "
+                        f"ca gian lận thật. Mô hình đã bắt trúng **{tp}/{n_true_frauds}** "
+                        f"ca (Tỷ lệ Recall đạt **{recall_val:.1f}%**)."
                     )
 
                 # Hiển thị bảng kết quả
@@ -297,7 +360,7 @@ with tab2:
                         lambda row: ["background-color: #ffcccc" if row.get("is_fraud", 0) == 1 else "" for _ in row],
                         axis=1,
                     ),
-                    use_container_width=True,
+                    width="stretch",
                 )
 
                 # Nút download CSV kết quả
@@ -318,8 +381,10 @@ with tab3:
     st.subheader("Bảng So sánh Định lượng Đa Mô hình (Rubric Tiêu chí 2 & 3)")
     st.markdown(
         """
-        Nhóm 4 đã thử nghiệm **5 dòng thuật toán** kết hợp với 3 chiến lược mất cân bằng (`class_weight`, `SMOTE`, `Undersampling`).
-        Toàn bộ được tinh chỉnh qua 5-Fold Stratified Cross-Validation với hàm mục tiêu tối ưu hóa **PR-AUC (Average Precision)**.
+        Nhóm 4 đã thử nghiệm **5 dòng thuật toán** kết hợp với 3 chiến lược mất cân bằng
+        (`class_weight`, `SMOTE`, `Undersampling`).
+        Toàn bộ được tinh chỉnh qua 5-Fold Stratified Cross-Validation
+        với hàm mục tiêu tối ưu hóa **PR-AUC (Average Precision)**.
         """
     )
 
@@ -332,7 +397,7 @@ with tab3:
         st.markdown("**Kết quả Cross-Validation (5-Fold trên tập Train):**")
         if cv_table_path.exists():
             df_cv = pd.read_csv(cv_table_path)
-            st.dataframe(df_cv, use_container_width=True)
+            st.dataframe(df_cv, width="stretch")
         else:
             st.info("Chưa tìm thấy bảng cv_comparison_tuned_models.csv")
 
@@ -340,7 +405,7 @@ with tab3:
         st.markdown("**Đánh giá Khách quan trên Tập Test Độc lập (56,746 giao dịch):**")
         if test_table_path.exists():
             df_test = pd.read_csv(test_table_path)
-            st.dataframe(df_test, use_container_width=True)
+            st.dataframe(df_test, width="stretch")
         else:
             st.info("Chưa tìm thấy bảng test_comparison_all_models.csv")
 
@@ -350,11 +415,19 @@ with tab3:
     with col_fig1:
         fig_pr = reports_dir / "figures" / "16_test_pr_roc_curves.png"
         if fig_pr.exists():
-            st.image(str(fig_pr), caption="Đường cong Precision-Recall & ROC trên tập Test", use_column_width=True)
+            st.image(
+                str(fig_pr),
+                caption="Đường cong Precision-Recall & ROC trên tập Test",
+                width="stretch",
+            )
     with col_fig2:
         fig_cm = reports_dir / "figures" / "17_confusion_matrices_test.png"
         if fig_cm.exists():
-            st.image(str(fig_cm), caption="Ma trận Nhầm lẫn (Confusion Matrix) của các mô hình trên tập Test", use_column_width=True)
+            st.image(
+                str(fig_cm),
+                caption="Ma trận Nhầm lẫn (Confusion Matrix) của các mô hình trên tập Test",
+                width="stretch",
+            )
 
 # --------------------------------------------------------------------------- #
 # TAB 4: GIẢI THÍCH MÔ HÌNH (XAI & SHAP)
@@ -364,7 +437,8 @@ with tab4:
     st.markdown(
         """
         Trong nghiệp vụ ngân hàng và kiểm soát rủi ro, một mô hình "hộp đen" là không đủ.
-        Mô hình cần giải thích được **tại sao** một giao dịch bị coi là gian lận để tuân thủ pháp lý và hỗ trợ tra soát.
+        Mô hình cần giải thích được **tại sao** một giao dịch bị coi là gian lận
+        để tuân thủ pháp lý và hỗ trợ tra soát.
         """
     )
 
@@ -372,20 +446,44 @@ with tab4:
     with col_shap1:
         fig_shap = reports_dir / "figures" / "20_shap_summary.png"
         if fig_shap.exists():
-            st.image(str(fig_shap), caption="Biểu đồ SHAP Summary Plot (Độ đóng góp của từng đặc trưng)", use_column_width=True)
+            st.image(
+                str(fig_shap),
+                caption="Biểu đồ SHAP Summary Plot (Độ đóng góp của từng đặc trưng)",
+                width="stretch",
+            )
         else:
             fig_perm = reports_dir / "figures" / "19_permutation_importance.png"
             if fig_perm.exists():
-                st.image(str(fig_perm), caption="Permutation Feature Importance", use_column_width=True)
+                st.image(
+                    str(fig_perm),
+                    caption="Permutation Feature Importance",
+                    width="stretch",
+                )
 
     with col_shap2:
         st.markdown("#### 💡 Nhận xét Chuyên sâu từ SHAP:")
         st.markdown(
             """
-            * **Các biến PCA phân biệt mạnh nhất:** $V_{14}$, $V_{10}$, $V_{12}$, $V_{17}$.
-            * **Quy luật:** Khi giá trị của $V_{14}$ hoặc $V_{12}$ càng **âm sâu** (chấm màu xanh dương trên trục SHAP), giá trị SHAP càng **dương lớn** $\rightarrow$ Thúc đẩy mô hình dự đoán khả năng gian lận tăng vọt.
-            * **Đặc trưng kỹ nghệ $V_{norm}$:** Chuẩn Euclidean tổng hợp $V_{norm} = \\sqrt{\\sum V_i^2}$ đứng trong top các đặc trưng quan trọng nhất, chứng minh giá trị của bước Kỹ nghệ đặc trưng mà nhóm đã thiết kế.
-            * **Biến $Amount$ và $Amount\\_log$:** Không phải cứ giao dịch lớn là gian lận; tội phạm mạng thường chia nhỏ giao dịch hoặc quẹt số tiền rất nhỏ ($Amount < 1$) để dò thẻ.
+            * **Các biến PCA đóng góp mạnh nhất (Mean |SHAP|):** $V_4$ (1,042),
+              $V_{14}$ (0,868), $V_{12}$ (0,480), $V_{14}\\times V_{10}$ (0,431),
+              $V_{11}$ (0,294), $V_8$ (0,285).
+            * **$V_4$ — biến đứng đầu:** giá trị càng **cao** (chấm đỏ) thì SHAP
+              càng **dương** $\\rightarrow$ đẩy mạnh khả năng gian lận. Đây là biến
+              mạnh nhất nhưng lại ít được nhắc tới trong phần EDA ban đầu.
+            * **$V_{14}$ và $V_{12}$ — dấu hiệu cảnh báo chính:** khi hai biến này
+              **âm sâu** (chấm xanh dương), SHAP dương rất lớn (tới +3,0 với
+              $V_{14}$) $\\rightarrow$ xác suất gian lận tăng vọt. Phân bố SHAP lệch
+              hẳn về phía dương, nghĩa là tín hiệu "gian lận" mạnh hơn nhiều tín
+              hiệu "bình thường".
+            * **Đặc trưng kỹ nghệ:** $V_{14}\\times V_{10}$ đứng **hạng 4**,
+              $V_{14}\\times V_{17}$ hạng 9, $V_{norm}$ hạng 11, $V_{14}\\times V_{12}$
+              hạng 12 $\\rightarrow$ bước Kỹ nghệ đặc trưng có đóng góp thật.
+            * **$Amount$ xếp hạng 21/43** (0,130) — không phải cứ giao dịch lớn là
+              gian lận. Cờ $Amount\\_small$ gần như không được mô hình dùng (0,004),
+              dù nó vẫn rẻ và không gây rò rỉ dữ liệu.
+            * **Lưu ý:** $V_1..V_{28}$ là thành phần PCA đã ẩn danh, nên chỉ giải
+              thích được *hướng* ảnh hưởng chứ không
+              quy được về nghiệp vụ cụ thể (tuổi, khu vực, loại thẻ...).
             """
         )
 

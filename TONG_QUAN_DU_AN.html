@@ -1,0 +1,729 @@
+<title>Luồng đi dự án Fraud Detection</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --ink: #0f141a;
+  --muted: #58626f;
+  --line: #dbe1e8;
+  --line-strong: #b9c3cf;
+  --accent: #1b4d8f;
+  --accent-ink: #103665;
+  --accent-soft: #e6eef8;
+  --fraud: #a8231c;
+  --fraud-soft: #fbeae8;
+  --safe: #10643d;
+  --safe-soft: #e4f3eb;
+  --warn: #7d5200;
+  --warn-soft: #fbf1dd;
+  --shadow: 0 1px 2px rgba(15, 20, 26, .06), 0 8px 24px -16px rgba(15, 20, 26, .35);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1117;
+    --surface: #151b23;
+    --surface-2: #1b232d;
+    --ink: #e7ecf2;
+    --muted: #9ba7b4;
+    --line: #263140;
+    --line-strong: #3a4757;
+    --accent: #82b2f5;
+    --accent-ink: #b9d4fa;
+    --accent-soft: #16243a;
+    --fraud: #ff9c92;
+    --fraud-soft: #33201f;
+    --safe: #6ad6a0;
+    --safe-soft: #14291f;
+    --warn: #e9b969;
+    --warn-soft: #2c2617;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 8px 24px -16px rgba(0, 0, 0, .8);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1117;
+  --surface: #151b23;
+  --surface-2: #1b232d;
+  --ink: #e7ecf2;
+  --muted: #9ba7b4;
+  --line: #263140;
+  --line-strong: #3a4757;
+  --accent: #82b2f5;
+  --accent-ink: #b9d4fa;
+  --accent-soft: #16243a;
+  --fraud: #ff9c92;
+  --fraud-soft: #33201f;
+  --safe: #6ad6a0;
+  --safe-soft: #14291f;
+  --warn: #e9b969;
+  --warn-soft: #2c2617;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 8px 24px -16px rgba(0, 0, 0, .8);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 72px;
+}
+
+.wrap { max-width: 940px; margin: 0 auto; }
+
+/* ---------- type ---------- */
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.15; letter-spacing: -0.02em; }
+h1 { font-size: clamp(1.85rem, 5.2vw, 2.9rem); font-weight: 800; letter-spacing: -0.035em; }
+h2 { font-size: clamp(1.25rem, 3vw, 1.55rem); font-weight: 700; letter-spacing: -0.025em; }
+h3 { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+p { margin: 0; }
+strong { font-weight: 700; }
+code, .mono { font-family: "Roboto Mono", ui-monospace, monospace; font-size: .875em; font-variant-numeric: tabular-nums; }
+
+.eyebrow {
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  font-size: .72rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: .85rem;
+}
+.eyebrow .n { color: var(--accent); font-weight: 500; }
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+.lede { color: var(--muted); font-size: 1.0625rem; max-width: 62ch; }
+
+/* ---------- header ---------- */
+header { display: grid; gap: 1.15rem; padding-bottom: 2rem; border-bottom: 1px solid var(--line); }
+.meta {
+  display: flex; flex-wrap: wrap; gap: .4rem .55rem;
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  font-size: .72rem; color: var(--muted);
+}
+.meta span { border: 1px solid var(--line); border-radius: 999px; padding: .18rem .6rem; background: var(--surface); }
+
+/* ---------- answer box ---------- */
+.answer {
+  margin-top: .4rem;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: 8px;
+  padding: 1.15rem 1.25rem;
+  display: grid;
+  gap: .7rem;
+}
+.answer .k { font-family: "Roboto Mono", ui-monospace, monospace; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); }
+.answer .v { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
+.answer .v em { font-style: normal; color: var(--accent); }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.chip {
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  font-size: .8rem; padding: .22rem .55rem; border-radius: 5px;
+  background: var(--surface-2); color: var(--ink); border: 1px solid var(--line);
+}
+
+/* ---------- sections ---------- */
+section { margin-top: 3.25rem; display: grid; gap: 1.25rem; }
+section > .lede { margin-top: -.35rem; }
+
+/* ---------- flow ---------- */
+.flow { display: grid; gap: 0; counter-reset: step; }
+
+.phase {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem .75rem;
+  padding: .55rem .9rem;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  margin-bottom: .9rem;
+}
+.phase .tag {
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 500;
+  color: var(--accent-ink);
+}
+.phase .desc { font-size: .82rem; color: var(--muted); }
+.phase.training { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.phase.inference { background: var(--safe-soft); border-color: color-mix(in srgb, var(--safe) 32%, transparent); }
+.phase.inference .tag { color: var(--safe); }
+
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+ol.steps li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.6rem 1fr;
+  gap: .95rem;
+  padding-bottom: 1.05rem;
+}
+ol.steps li::before {
+  counter-increment: step;
+  content: counter(step, decimal-leading-zero);
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  font-size: .74rem;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  width: 2.6rem;
+  height: 1.75rem;
+  display: grid;
+  place-items: center;
+  position: relative;
+  z-index: 1;
+}
+ol.steps li::after {
+  content: "";
+  position: absolute;
+  left: calc(1.3rem - 0.5px);
+  top: 1.75rem;
+  bottom: 0;
+  width: 1px;
+  background: var(--line-strong);
+}
+ol.steps li:last-child::after { display: none; }
+ol.steps li.halt::after { background: linear-gradient(var(--line-strong), transparent); }
+
+.step-body { min-width: 0; display: grid; gap: .22rem; padding-top: .1rem; }
+.step-body .t { font-weight: 700; font-size: .97rem; letter-spacing: -0.01em; }
+.step-body .d { font-size: .875rem; color: var(--muted); }
+.step-body .d code { color: var(--ink); }
+
+.fact {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  font-size: .8rem; color: var(--ink);
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 4px; padding: .1rem .45rem; margin-top: .15rem;
+  width: fit-content;
+}
+.fact.hot { background: var(--fraud-soft); border-color: color-mix(in srgb, var(--fraud) 35%, transparent); color: var(--fraud); }
+.fact.ok { background: var(--safe-soft); border-color: color-mix(in srgb, var(--safe) 35%, transparent); color: var(--safe); }
+
+/* ---------- bridge ---------- */
+.bridge {
+  margin: 1.6rem 0 0;
+  padding: 1.1rem 1.2rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  display: grid;
+  gap: .45rem;
+}
+.bridge .k { font-family: "Roboto Mono", ui-monospace, monospace; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.bridge .v { font-weight: 700; }
+.bridge .v code { font-size: .95em; }
+
+/* ---------- two lanes ---------- */
+.lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .9rem; }
+.lane {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 1rem 1.1rem; display: grid; gap: .5rem; align-content: start;
+}
+.lane h3 { display: flex; align-items: center; gap: .5rem; }
+.lane .dot { width: .5rem; height: .5rem; border-radius: 50%; flex: none; }
+.lane.off .dot { background: var(--accent); }
+.lane.on .dot { background: var(--safe); }
+.lane dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .3rem .8rem; font-size: .855rem; }
+.lane dt { color: var(--muted); }
+.lane dd { margin: 0; font-family: "Roboto Mono", ui-monospace, monospace; font-size: .78rem; }
+.lane.on dl dd { color: var(--ink); }
+
+/* ---------- tables ---------- */
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: .875rem; min-width: 520px; border-radius: 4px; overflow: hidden; }
+th, td { text-align: left; padding: .6rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+thead th {
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  font-size: .7rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); font-weight: 500; background: var(--surface-2); white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-family: "Roboto Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.pick td { background: var(--accent-soft); }
+tr.pick td:first-child { font-weight: 700; border-left: 2px solid var(--accent); }
+.who { display: block; font-weight: 700; }
+.sub { display: block; font-size: .78rem; color: var(--muted); }
+
+/* ---------- Q&A ---------- */
+.qa { display: grid; gap: .8rem; }
+.qa details {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 0; overflow: hidden;
+}
+.qa details[open] { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+.qa summary {
+  cursor: pointer; padding: .85rem 1.05rem;
+  font-weight: 600; font-size: .93rem;
+  list-style: none; display: flex; gap: .7rem; align-items: baseline;
+}
+.qa summary::-webkit-details-marker { display: none; }
+.qa summary::before {
+  content: "+";
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  color: var(--accent); font-weight: 500; flex: none;
+}
+.qa details[open] summary::before { content: "−"; }
+.qa details[open] summary { border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.qa .a { padding: .9rem 1.05rem 1.05rem; font-size: .9rem; color: var(--ink); display: grid; gap: .55rem; }
+.qa .a .lbl {
+  font-family: "Roboto Mono", ui-monospace, monospace;
+  font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+}
+
+/* ---------- callout ---------- */
+.note {
+  border-radius: 8px; padding: .9rem 1.05rem; font-size: .885rem;
+  border: 1px solid var(--line); background: var(--surface);
+  display: grid; gap: .35rem;
+}
+.note.warn { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
+.note.warn strong { color: var(--warn); }
+.note.info { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+
+/* ---------- checklist ---------- */
+ul.check { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+ul.check li { display: grid; grid-template-columns: 1.1rem 1fr; gap: .65rem; font-size: .9rem; align-items: start; }
+ul.check li .box {
+  width: 1.1rem; height: 1.1rem; border: 1.5px solid var(--line-strong);
+  border-radius: 4px; margin-top: .18rem;
+}
+ul.check li .box.done { border-color: var(--safe); background: var(--safe-soft); position: relative; }
+ul.check li .box.done::after {
+  content: ""; position: absolute; left: .3rem; top: .08rem;
+  width: .32rem; height: .62rem;
+  border: solid var(--safe); border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+
+footer { margin-top: 3.5rem; padding-top: 1.4rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .82rem; display: grid; gap: .3rem; }
+
+@media (max-width: 520px) {
+  body { padding-block: 28px 56px; }
+  ol.steps li { grid-template-columns: 2.2rem 1fr; gap: .7rem; }
+  ol.steps li::before { width: 2.2rem; font-size: .68rem; }
+  ol.steps li::after { left: calc(1.1rem - 0.5px); }
+}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="meta">
+    <span>BTL Học máy · 608807</span>
+    <span>Nhóm 4 · 68PM2</span>
+    <span>HUCE</span>
+    <span>10/11/2026</span>
+  </div>
+  <h1>Một giao dịch đi qua đâu trước khi bị chặn</h1>
+  <p class="lede">Bản đồ toàn bộ dự án phát hiện gian lận thẻ tín dụng: dữ liệu chảy qua bước nào, ai làm bước nào, và con số nào là chuẩn để cả nhóm dùng chung.</p>
+
+  <div class="answer">
+    <div class="k">Mô hình đang chạy trong sản phẩm</div>
+    <div class="v"><em>XGBoost</em> · ngưỡng quyết định 0,4671</div>
+    <div class="chips">
+      <span class="chip">n_estimators=300</span>
+      <span class="chip">max_depth=8</span>
+      <span class="chip">learning_rate=0.05</span>
+      <span class="chip">scale_pos_weight=10</span>
+      <span class="chip">subsample=0.7</span>
+      <span class="chip">colsample_bytree=0.6</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<section>
+  <div class="eyebrow"><span class="n">01</span> Sơ đồ luồng</div>
+  <h2>Một đường ống, ba pha</h2>
+  <p class="lede">Đọc từ trên xuống. Số thứ tự là thứ tự thực thi thật trong mã nguồn. Chỉ pha B mới cần file dữ liệu gốc 144&nbsp;MB.</p>
+
+  <div class="flow">
+
+    <div class="phase">
+      <span class="tag">Pha A · Chuẩn bị</span>
+      <span class="desc">Một lần duy nhất, trước khi học bất cứ thứ gì</span>
+    </div>
+    <ol class="steps">
+      <li>
+        <div class="step-body">
+          <div class="t">Dữ liệu thô</div>
+          <div class="d">File <code>data/creditcard.csv</code>: 31 cột, gồm <code>Time</code>, <code>V1..V28</code> (thành phần PCA đã ẩn danh), <code>Amount</code>, và nhãn <code>Class</code>.</div>
+          <span class="fact">284.807 dòng · 492 gian lận · 0,1727%</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <div class="t">Làm sạch</div>
+          <div class="d">Bỏ dòng trùng lặp <em>trước khi</em> chia tập, để cùng một giao dịch không nằm ở cả train lẫn test.</div>
+          <span class="fact hot">−1.081 dòng (có 19 ca gian lận) → còn 283.726 dòng</span>
+        </div>
+      </li>
+      <li class="halt">
+        <div class="step-body">
+          <div class="t">Chia train / test, phân tầng</div>
+          <div class="d"><code>train_test_split</code> với <code>stratify=y</code> giữ nguyên tỷ lệ gian lận ở cả hai bên. Từ đây trở đi, <strong>test bị khóa</strong> — chỉ mở đúng một lần ở bước 9.</div>
+          <span class="fact">Train 226.980 (378 ca) · Test 56.746 (95 ca)</span>
+        </div>
+      </li>
+    </ol>
+
+    <div class="phase training">
+      <span class="tag">Pha B · Huấn luyện</span>
+      <span class="desc">Offline, ~2 giờ, chạy trong <code>02_Modeling_Evaluation.ipynb</code></span>
+    </div>
+    <ol class="steps">
+      <li>
+        <div class="step-body">
+          <div class="t">Kỹ nghệ đặc trưng</div>
+          <div class="d"><code>FraudFeatureEngineer</code> tạo 11 đặc trưng mới từ chính từng dòng: <code>Amount_log</code>, <code>Amount_small</code>, <code>Hour</code>, <code>Hour_sin</code>, <code>Hour_cos</code>, <code>Period</code>, <code>V_norm</code> và 4 biến tích giữa các V mạnh nhất. Không học tham số từ dữ liệu nên không gây rò rỉ.</div>
+          <span class="fact">30 cột → 40 cột</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <div class="t">Chuẩn hóa và mã hóa</div>
+          <div class="d"><code>ColumnTransformer</code>: <code>StandardScaler</code> cho nhóm V, <strong><code>RobustScaler</code> cho <code>Amount</code></strong> (chịu được đuôi dài, vì gian lận nằm ở giá trị cực trị), one-hot cho <code>Period</code>.</div>
+          <span class="fact">40 cột → 43 đặc trưng số</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <div class="t">Xử lý mất cân bằng</div>
+          <div class="d">Thử cả ba chiến lược cho từng họ mô hình: <code>class_weight</code> · <code>SMOTE</code> · <code>Undersampling</code>. Bộ lấy mẫu nằm <em>bên trong</em> pipeline nên chỉ chạm vào phần train của từng fold.</div>
+          <span class="fact">12 tổ hợp (mô hình × chiến lược)</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <div class="t">5-fold Stratified Cross-Validation</div>
+          <div class="d">Điểm số ở bước này dùng để <strong>chọn</strong> mô hình, nên phải có trước khi chọn. Chỉ số chấm điểm là PR-AUC (<code>average_precision</code>), không phải Accuracy.</div>
+          <span class="fact ok">XGBoost 0,8572 ± 0,0149</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <div class="t">Tinh chỉnh siêu tham số</div>
+          <div class="d"><code>GridSearchCV</code> cho LR và k-NN, <code>RandomizedSearchCV</code> cho Decision Tree, Random Forest, XGBoost.</div>
+          <span class="fact">LR 18 tổ hợp · k-NN 40 · DT 15 · RF 12 · XGB 25</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <div class="t">Chọn ngưỡng quyết định</div>
+          <div class="d">Quét mọi ngưỡng trên dự đoán <strong>out-of-fold của riêng tập train</strong>, chọn ngưỡng cực đại F2. Tuyệt đối không dùng test.</div>
+          <span class="fact">p* = 0,4671 (không phải 0,5)</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <div class="t">Đánh giá trên test — lần duy nhất</div>
+          <div class="d">Áp ngưỡng 0,4671 lên tập test đã khóa từ bước 3.</div>
+          <span class="fact ok">TP 73 · FP 3 · FN 22</span>
+        </div>
+      </li>
+      <li class="halt">
+        <div class="step-body">
+          <div class="t">Đóng gói</div>
+          <div class="d">Một file duy nhất chứa pipeline đã fit + ngưỡng + siêu dữ liệu.</div>
+          <span class="fact">models/best_model.joblib · 237 KB</span>
+        </div>
+      </li>
+    </ol>
+
+    <div class="phase inference">
+      <span class="tag">Pha C · Suy luận</span>
+      <span class="desc">Online, &lt; 0,1 giây, lặp lại mỗi khi có giao dịch mới</span>
+    </div>
+    <ol class="steps">
+      <li>
+        <div class="step-body">
+          <div class="t">Giao dịch mới đi qua pipeline đã fit</div>
+          <div class="d">Dữ liệu mới chỉ <code>transform</code>, không <code>fit</code> lại. So xác suất với ngưỡng 0,4671 để ra quyết định chặn hay duyệt. Hai cửa vào: <code>app.py</code> (web, cổng 8501) và <code>predict.py</code> (dòng lệnh).</div>
+          <span class="fact ok">Không cần creditcard.csv</span>
+        </div>
+      </li>
+    </ol>
+  </div>
+
+  <div class="bridge">
+    <div class="k">Sợi dây nối pha B và pha C</div>
+    <div class="v"><code>models/best_model.joblib</code> — "bộ não" đã học xong, 237 KB</div>
+    <p class="d" style="font-size:.875rem;color:var(--muted)">Đây là lý do webapp vẫn demo được trên máy chưa có file dữ liệu gốc. Huấn luyện và suy luận là hai pha tách biệt, chỉ gặp nhau ở đúng một file.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <div class="eyebrow"><span class="n">02</span> Hai pha khác nhau thế nào</div>
+  <h2>Nhầm chỗ này là mất điểm</h2>
+  <p class="lede">Câu dễ hiểu sai nhất: "webapp dùng để train". Không phải. Webapp chỉ áp công thức đã học.</p>
+
+  <div class="lanes">
+    <div class="lane off">
+      <h3><span class="dot"></span>Huấn luyện</h3>
+      <dl>
+        <dt>Chạy</dt><dd>1 lần, trên máy có dữ liệu</dd>
+        <dt>Cần CSV gốc</dt><dd>Có — 144 MB</dd>
+        <dt>Thời gian</dt><dd>~2 giờ</dd>
+        <dt>Làm gì</dt><dd>học từ 226.980 ví dụ</dd>
+        <dt>Nơi chạy</dt><dd>notebook 02</dd>
+        <dt>Kết quả</dt><dd>1 file .joblib</dd>
+      </dl>
+    </div>
+    <div class="lane on">
+      <h3><span class="dot"></span>Suy luận</h3>
+      <dl>
+        <dt>Chạy</dt><dd>mỗi giao dịch mới</dd>
+        <dt>Cần CSV gốc</dt><dd>Không</dd>
+        <dt>Thời gian</dt><dd>~0,07 giây</dd>
+        <dt>Làm gì</dt><dd>áp công thức, ra xác suất</dd>
+        <dt>Nơi chạy</dt><dd>app.py · predict.py</dd>
+        <dt>Kết quả</dt><dd>chặn / duyệt</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="note info">
+    <strong>Vì sao phải tách hai pha?</strong>
+    <span>Giao dịch thật đến liên tục, không thể chờ train lại 2 giờ. Ngân hàng chỉ huấn luyện lại định kỳ khi dữ liệu trôi (data drift) — đó là lý do nhóm có mục 13 trong notebook 02, kiểm tra độ bền theo thời gian.</span>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <div class="eyebrow"><span class="n">03</span> Ai làm bước nào</div>
+  <h2>Chia việc theo đúng luồng</h2>
+  <p class="lede">Mỗi người sở hữu một đoạn của pipeline, nên hỏi chéo được nhau ngay tại ranh giới.</p>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>Thành viên</th><th>Đoạn phụ trách</th><th class="num">Bước</th><th>Sản phẩm</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="who">Đức Anh</span><span class="sub">EDA &amp; đặc trưng</span></td>
+          <td>Khám phá, làm sạch, chia tập, kỹ nghệ đặc trưng, ColumnTransformer</td>
+          <td class="num">1–5</td>
+          <td>notebook 01 · hình 01–09</td>
+        </tr>
+        <tr>
+          <td><span class="who">Hà Duy</span><span class="sub">Mất cân bằng</span></td>
+          <td>Ba chiến lược cân bằng, baseline Dummy, LR, k-NN</td>
+          <td class="num">6</td>
+          <td><code>imbalance_strategy_comparison.csv</code></td>
+        </tr>
+        <tr>
+          <td><span class="who">Hoàng</span><span class="sub">Cây &amp; CV</span></td>
+          <td>Decision Tree, Random Forest, 5-fold CV, learning/validation curve</td>
+          <td class="num">7–8</td>
+          <td>hình 13, 14 · bảng tuning</td>
+        </tr>
+        <tr class="pick">
+          <td><span class="who">Bình</span><span class="sub">Pipeline &amp; demo</span></td>
+          <td>Kiến trúc pipeline, XGBoost, chọn ngưỡng, đóng gói, webapp, Docker</td>
+          <td class="num">9–11</td>
+          <td><code>best_model.joblib</code> · <code>app.py</code></td>
+        </tr>
+        <tr>
+          <td><span class="who">Trần Duy</span><span class="sub">Đánh giá &amp; XAI</span></td>
+          <td>Đa chỉ số, ma trận nhầm lẫn, phân tích FN/FP, SHAP, báo cáo, slide</td>
+          <td class="num">9 · 12</td>
+          <td>hình 16–20 · báo cáo · slide</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <div class="eyebrow"><span class="n">04</span> Số liệu chốt</div>
+  <h2>Chỉ dùng bảng này</h2>
+  <p class="lede">Mọi con số khác trong tài liệu cũ (PR-AUC 0,852 · Precision 84,9%) là số từ lần chạy trước và đã được sửa lại. Nguồn chuẩn: <code>reports/tables/test_comparison_all_models.csv</code>.</p>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Mô hình</th>
+          <th class="num">PR-AUC (CV)</th>
+          <th class="num">PR-AUC (test)</th>
+          <th class="num">Recall</th>
+          <th class="num">Precision</th>
+          <th class="num">F2</th>
+          <th class="num">MCC</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="pick">
+          <td>XGBoost</td>
+          <td class="num">0,8572</td>
+          <td class="num">0,8197</td>
+          <td class="num">0,768</td>
+          <td class="num">0,961</td>
+          <td class="num">0,800</td>
+          <td class="num">0,859</td>
+        </tr>
+        <tr>
+          <td>Random Forest</td>
+          <td class="num">0,8501</td>
+          <td class="num">0,8194</td>
+          <td class="num">0,758</td>
+          <td class="num">0,878</td>
+          <td class="num">0,779</td>
+          <td class="num">0,815</td>
+        </tr>
+        <tr>
+          <td>Logistic Regression</td>
+          <td class="num">0,8098</td>
+          <td class="num">0,7601</td>
+          <td class="num">0,779</td>
+          <td class="num">0,787</td>
+          <td class="num">0,781</td>
+          <td class="num">0,783</td>
+        </tr>
+        <tr>
+          <td>k-NN</td>
+          <td class="num">0,7642</td>
+          <td class="num">0,7244</td>
+          <td class="num">0,779</td>
+          <td class="num">0,712</td>
+          <td class="num">0,765</td>
+          <td class="num">0,744</td>
+        </tr>
+        <tr>
+          <td>Decision Tree</td>
+          <td class="num">0,7273</td>
+          <td class="num">0,6859</td>
+          <td class="num">0,716</td>
+          <td class="num">0,895</td>
+          <td class="num">0,746</td>
+          <td class="num">0,800</td>
+        </tr>
+        <tr>
+          <td>Dummy (luôn đoán "bình thường")</td>
+          <td class="num">0,0017</td>
+          <td class="num">0,0017</td>
+          <td class="num">0</td>
+          <td class="num">0</td>
+          <td class="num">0</td>
+          <td class="num">0</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="lanes">
+    <div class="lane off">
+      <h3><span class="dot"></span>Đọc đúng bảng này</h3>
+      <p style="font-size:.875rem;color:var(--muted);margin:0">XGBoost và Random Forest chênh nhau chỉ <span class="mono">0,0003</span>, khoảng tin cậy 95% là <span class="mono">[−0,016 ; +0,015]</span>, thắng 53% số lần bootstrap. Nói "XGBoost nhỉnh hơn, chưa đủ ý nghĩa thống kê" — đừng nói "vượt trội".</p>
+    </div>
+    <div class="lane on">
+      <h3><span class="dot"></span>Vì sao chọn XGBoost</h3>
+      <p style="font-size:.875rem;color:var(--muted);margin:0">PR-AUC trung bình CV cao nhất và thắng 4/5 fold. Dummy đạt Accuracy 99,83% mà Recall bằng 0 — minh họa Accuracy vô dụng khi dữ liệu lệch 1:580.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <div class="eyebrow"><span class="n">05</span> Vấn đáp</div>
+  <h2>Sáu câu chắc chắn bị hỏi</h2>
+  <p class="lede">Bấm để mở. Câu trả lời viết theo giọng nói, dùng được ngay khi đứng trước thầy.</p>
+
+  <div class="qa">
+    <details open>
+      <summary>Sao không dùng Accuracy?</summary>
+      <div class="a">
+        <span class="lbl">Trả lời</span>
+        <p>Vì mô hình ngây thơ luôn đoán "bình thường" đã đạt 99,83% Accuracy mà bỏ sót 100% gian lận. Dữ liệu lệch 1:580 nên Accuracy không phân biệt được mô hình tốt với mô hình vô dụng. Nhóm em dùng PR-AUC và Recall.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Rò rỉ dữ liệu là gì, nhóm chặn bằng cách nào?</summary>
+      <div class="a">
+        <span class="lbl">Trả lời</span>
+        <p>Là khi thông tin của test lọt vào lúc train, làm điểm trên giấy cao nhưng chạy thật thì hỏng. Nhóm chặn bằng bốn lớp: chia train/test ngay từ đầu; test khóa lại chỉ dùng một lần; <code>FraudFeatureEngineer</code> không có trạng thái (chỉ tính từ chính dòng đó); và mọi imputer, scaler, SMOTE đều nằm trong pipeline nên chỉ fit trên train của từng fold.</p>
+        <p>Notebook 02 kiểm chứng bằng mã: <code>scaler.n_samples_seen_ == 226980</code> đúng bằng số dòng train, và không có dòng nào xuất hiện ở cả hai tập.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Vì sao ngưỡng là 0,4671 chứ không phải 0,5?</summary>
+      <div class="a">
+        <span class="lbl">Trả lời</span>
+        <p>Ngưỡng 0,5 chỉ hợp lý khi hai lớp cân bằng và chi phí sai như nhau. Ở đây bỏ sót một vụ gian lận đắt hơn nhiều so với báo nhầm một giao dịch, nên nhóm chọn ngưỡng cực đại F2 — chỉ số ưu tiên Recall gấp đôi Precision. Ngưỡng được quét trên dự đoán out-of-fold của tập train, không đụng tới test.</p>
+        <p>Nếu muốn Recall ≥ 0,85 thì ngưỡng phải hạ xuống 0,057 và Precision tụt còn 0,759 — đó là bảng <code>operating_points_oof.csv</code>.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Vì sao dùng <code>imblearn.pipeline.Pipeline</code> mà không phải của sklearn?</summary>
+      <div class="a">
+        <span class="lbl">Trả lời</span>
+        <p>Vì pipeline có bước lấy mẫu lại. Pipeline của sklearn không chạy được <code>sample()</code> của imblearn. Dùng imblearn thì bộ lấy mẫu chỉ áp dụng lúc <code>fit</code>, còn khi <code>predict_proba</code> nó tự bị bỏ qua — đúng điều mình cần: học trên dữ liệu cân bằng, dự đoán trên phân phối thật.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Kỹ nghệ đặc trưng có thật sự giúp ích không?</summary>
+      <div class="a">
+        <span class="lbl">Trả lời trung thực</span>
+        <p>Có, nhưng không đều. So sánh có/không có đặc trưng mới trên cùng fold: Logistic +0,045, Decision Tree +0,033, k-NN +0,021. Với Random Forest và XGBoost gần như bằng 0 (+0,001 và +0,002) vì cây tự tìm được tương tác.</p>
+        <p>Nên trả lời: "hữu ích rõ với mô hình đơn giản, còn với cây tập hợp thì nằm trong nhiễu". Đừng nói "chắc chắn giúp".</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Mô hình học được gì từ dữ liệu?</summary>
+      <div class="a">
+        <span class="lbl">Trả lời</span>
+        <p>Theo SHAP: <code>V4</code> đứng đầu (1,042), rồi <code>V14</code> (0,868), <code>V12</code> (0,480), <code>V14×V10</code> (0,431). Khi V14 hoặc V12 càng âm sâu thì xác suất gian lận càng cao; V4 thì ngược lại — giá trị càng cao càng nguy hiểm.</p>
+        <p>V1–V28 là thành phần PCA đã ẩn danh nên chỉ giải thích được <em>hướng</em> ảnh hưởng, không quy được về nghiệp vụ như tuổi hay khu vực.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <div class="eyebrow"><span class="n">06</span> Còn lại gì</div>
+  <h2>Ba thư mục đang trống</h2>
+  <p class="lede">Phần kỹ thuật đã xong. Ba hạng mục dưới đây là điều kiện của Milestone 2 và chưa có gì trong đó.</p>
+
+  <ul class="check">
+    <li><span class="box done"></span><span><strong>Mã nguồn + webapp + Docker</strong> — chạy được, đã kiểm thử bốn tab, Jupyter ở cổng 8888.</span></li>
+    <li><span class="box"></span><span><strong>01_Report/</strong> — báo cáo kỹ thuật 15–25 trang, năm chương.</span></li>
+    <li><span class="box"></span><span><strong>02_Slide/</strong> — 12–15 slide thuyết trình.</span></li>
+    <li><span class="box"></span><span><strong>04_Video_Demo/</strong> — video dự phòng 3 phút.</span></li>
+  </ul>
+
+  <div class="note warn">
+    <strong>Hai lỗi demo đã sửa, đừng vô tình làm hỏng lại</strong>
+    <span>Nút "Nạp mẫu Gian lận" trước đây lấy ca gian lận đầu tiên trong file mẫu — mà đó đúng là ca mô hình bỏ sót (0,02%), nên bấm vào lại hiện "GIAO DỊCH HỢP LỆ". Giờ nó chọn ca có xác suất cao nhất (99,93%). Tương tự, logo HUCE tải từ Wikimedia bị chặn 403 nên đã bỏ khỏi sidebar.</span>
+  </div>
+</section>
+
+<footer>
+  <div>Nguồn số liệu: <code>reports/tables/</code> · mô hình: <code>models/best_model.joblib</code></div>
+  <div>Kiểm chứng ngày 10/11/2026 trên dữ liệu gốc 284.807 dòng.</div>
+</footer>
+
+</div>

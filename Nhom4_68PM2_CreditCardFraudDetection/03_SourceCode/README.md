@@ -88,14 +88,24 @@ print(result[["Amount", "fraud_probability", "is_fraud"]])
 
 ## 5. Kết quả chính trên Test Set độc lập (56,746 giao dịch - 95 ca gian lận)
 
-| Mô hình | PR-AUC (CV 5-fold) | PR-AUC (Test) | Recall (Test) | Precision (Test) | F2-Score (Test) |
-|:---|:---:|:---:|:---:|:---:|:---:|
-| **XGBoost (Tối ưu)** | **0.869** | **0.852** | **83.2%** | **84.9%** | **0.835** |
-| Random Forest | 0.854 | 0.838 | 80.0% | 85.4% | 0.810 |
-| Logistic Regression | 0.778 | 0.765 | 86.3% | 6.8% | 0.270 |
-| Decision Tree | 0.742 | 0.718 | 76.8% | 72.3% | 0.758 |
-| k-NN | 0.651 | 0.620 | 81.1% | 15.2% | 0.435 |
-| *Baseline (Dummy)* | 0.0017 | 0.0017 | 0.0% | 0.0% | 0.000 |
+Số liệu lấy trực tiếp từ `reports/tables/test_comparison_all_models.csv`. Cột "PR-AUC (CV)" là trung bình 5-fold trên tập train; các cột còn lại tính trên tập test tại **ngưỡng tối ưu riêng của từng mô hình** (chọn bằng cực đại F2 trên dự đoán out-of-fold của train).
+
+| Mô hình | PR-AUC (CV 5-fold) | PR-AUC (Test) | Recall (Test) | Precision (Test) | F2 (Test) | MCC (Test) |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **XGBoost (Tối ưu)** | **0.8572 ± 0.0149** | **0.8197** | **0.768** | **0.961** | **0.800** | **0.859** |
+| Random Forest | 0.8501 ± 0.0167 | 0.8194 | 0.758 | 0.878 | 0.779 | 0.815 |
+| Logistic Regression | 0.8098 ± 0.0230 | 0.7601 | 0.779 | 0.787 | 0.781 | 0.783 |
+| k-NN | 0.7642 ± 0.0444 | 0.7244 | 0.779 | 0.712 | 0.764 | 0.744 |
+| Decision Tree | 0.7273 ± 0.0294 | 0.6859 | 0.716 | 0.895 | 0.746 | 0.800 |
+| *Baseline (Dummy)* | 0.0017 | 0.0017 | 0.0 | 0.0 | 0.0 | 0.0 |
+
+> **Lưu ý khi đọc bảng:** XGBoost và Random Forest gần như tương đương về PR-AUC (chênh 0,0003; bootstrap ghép cặp 95% CI
+> [-0,016 ; +0,015], chỉ thắng 53% số lần) — xem `reports/tables/paired_bootstrap_vs_best.csv`. XGBoost được chọn vì
+> PR-AUC trung bình CV cao nhất và thắng 4/5 fold, **không** phải vì vượt trội có ý nghĩa thống kê.
+> Ở ngưỡng mặc định 0,5, XGBoost cho Recall 0,768 / Precision 0,961 / F2 0,800 (trùng với ngưỡng tối ưu 0,4671 trên mô hình này).
+
+**Confusion matrix của XGBoost trên test (tại ngưỡng 0,4671):** TP = 73, FP = 3, FN = 22, TN = 56.648.
+Khoảng tin cậy bootstrap 95% (1.000 lần): PR-AUC [0,739 ; 0,890], Recall [0,684 ; 0,853], Precision [0,915 ; 1,000].
 
 ---
 

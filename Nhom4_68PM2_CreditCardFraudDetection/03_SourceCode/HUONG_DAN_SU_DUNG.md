@@ -78,9 +78,13 @@ docker compose up --build -d webapp
 ### Bước 3: Xem hoặc chỉnh sửa Jupyter Notebook trong Docker (Tùy chọn)
 Nếu muốn mở Jupyter Lab bên trong container Docker:
 ```bash
-docker compose --profile jupyter up -d jupyter
+docker compose --profile jupyter up -d --build jupyter
 ```
 Truy cập: 👉 **`http://localhost:8888`**
+
+> [!NOTE]
+> `jupyterlab` đã được thêm vào `requirements.txt`. Nếu trước đây bạn từng build image mà chưa có gói này, cần thêm cờ
+> `--build` (như lệnh trên) để cài lại; thiếu nó container sẽ báo `Jupyter command jupyter-lab not found` rồi thoát.
 
 ### Bước 4: Chạy lệnh dự đoán bằng CLI trong Docker
 ```bash
@@ -139,7 +143,7 @@ Trình duyệt sẽ tự động mở giao diện ứng dụng tại `http://loc
 1. **Kiểm tra Giao dịch Đơn lẻ:** Tự nhập số tiền, thời gian hoặc bấm **"Nạp mẫu Giao dịch Gian lận"** để xem hệ thống cảnh báo đỏ và khuyến nghị nghiệp vụ ngân hàng.
 2. **Quét Hàng loạt (Batch Scanning):** Tải file CSV lên hoặc bấm **"Dùng file mẫu 20 giao dịch"**, hệ thống sẽ quét hàng loạt, tính toán tỷ lệ phát hiện và cho phép tải về file `predictions.csv`.
 3. **Báo cáo Đa Mô hình:** Xem các bảng so sánh chỉ số CV và Test độc lập, đường cong PR/ROC và ma trận nhầm lẫn.
-4. **Giải thích Mô hình (XAI & SHAP):** Trực quan hóa mức độ ảnh hưởng của từng đặc trưng ($V_{14}, V_{10}, V_{12}, V_{norm}$...) tới quyết định của thuật toán.
+4. **Giải thích Mô hình (XAI & SHAP):** Trực quan hóa mức độ ảnh hưởng của từng đặc trưng ($V_4, V_{14}, V_{12}, V_{14}\times V_{10}$...) tới quyết định của thuật toán.
 
 ---
 

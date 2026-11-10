@@ -39,15 +39,25 @@ MODEL_PATH = Path(__file__).resolve().parent / "models" / "best_model.joblib"
 
 
 @lru_cache(maxsize=1)
-def load_model(model_path: str | Path = MODEL_PATH) -> dict:
-    """Nạp gói mô hình (pipeline, ngưỡng, siêu dữ liệu). Chỉ nạp một lần."""
-    model_path = Path(model_path)
-    if not model_path.exists():
+def _load_model_cached(model_path: str) -> dict:
+    """Nạp gói mô hình đã huấn luyện từ một đường dẫn cố định."""
+    path = Path(model_path)
+    if not path.exists():
         raise FileNotFoundError(
-            f"Không tìm thấy {model_path}. Hãy chạy notebook 02_Modeling_Evaluation.ipynb "
+            f"Không tìm thấy {path}. Hãy chạy notebook 02_Modeling_Evaluation.ipynb "
             "để huấn luyện và xuất mô hình."
         )
-    return joblib.load(model_path)
+    return joblib.load(path)
+
+
+def load_model(model_path: str | Path = MODEL_PATH) -> dict:
+    """Nạp gói mô hình (pipeline, ngưỡng, siêu dữ liệu). Chỉ nạp một lần.
+
+    Đường dẫn được chuẩn hóa về chuỗi trước khi vào cache: nếu không, lời gọi
+    bằng ``Path`` và bằng ``str`` sẽ tạo hai khóa cache khác nhau và với
+    ``maxsize=1`` chúng đẩy nhau ra, khiến mô hình bị đọc lại từ đĩa mỗi lần.
+    """
+    return _load_model_cached(str(model_path))
 
 
 def validate_input(df: pd.DataFrame) -> pd.DataFrame:

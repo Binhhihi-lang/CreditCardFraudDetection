@@ -50,7 +50,7 @@ flowchart LR
     2. `02_Slide/Slide_Thuyet_trinh_Nhom4.pdf` (12 - 15 slide).
     3. `03_SourceCode/` (Code sạch, notebooks, `models/best_model.joblib`, `predict.py`, `app.py`, `README.md`, `Dockerfile`).
     4. `04_Video_Demo/` (Video demo dự phòng 3 phút).
-  * *Thành viên chủ lực:* Cả nhóm cùng rà soát dưới sự điều phối của **Bình** và **Trần Duy**.
+  * *Thành viên chủ lực:* Cả nhóm cùng rà soát dưới sự điều phối của **Bình**.
 * **Milestone 3 (Buổi 7 & Buổi 8):** Báo cáo thuyết trình trực tiếp tại giảng đường, Live Demo Webapp và trả lời vấn đáp cá nhân.
 
 ---
@@ -165,8 +165,15 @@ flowchart LR
 
 **Câu hỏi 3: Biểu đồ SHAP (Shapley Additive Explanations) cho biết điều gì về mô hình của nhóm?**
 * **Trả lời:** SHAP dựa trên lý thuyết trò chơi hợp tác (Game Theory) để tính toán mức độ đóng góp công bằng của từng đặc trưng vào việc tăng hay giảm xác suất gian lận của một giao dịch cụ thể:
-  - Biểu đồ **SHAP Summary Plot** chỉ ra rằng các biến $V_{14}$, $V_{10}$, $V_{12}$, $V_{17}$ và biến kỹ nghệ $V_{norm}$ có giá trị SHAP lớn nhất.
-  - Cụ thể: Khi giá trị của $V_{14}$ hoặc $V_{12}$ càng âm sâu, giá trị SHAP càng dương mạnh $\rightarrow$ đẩy xác suất dự đoán giao dịch đó thành gian lận lên rất cao. Điều này giúp ngân hàng không chỉ biết giao dịch nào bị chặn mà còn giải thích được lý do chặn cho khách hàng và cơ quan thanh tra.
+  - Biểu đồ **SHAP Summary Plot** xếp hạng theo Mean |SHAP|: $V_4$ (1,042), $V_{14}$ (0,868), $V_{12}$ (0,480),
+    $V_{14}\times V_{10}$ (0,431), $V_{11}$ (0,294), $V_8$ (0,285). Lưu ý $V_{10}$ và $V_{17}$ đứng riêng lẻ chỉ ở hạng
+    8 và 15 — chúng đóng góp chủ yếu *gián tiếp* qua các biến tương tác $V_{14}\times V_{10}$ (hạng 4) và
+    $V_{14}\times V_{17}$ (hạng 9).
+  - Cụ thể: khi giá trị của $V_{14}$ hoặc $V_{12}$ càng âm sâu, giá trị SHAP càng dương mạnh (tới +3,0 với $V_{14}$)
+    $\rightarrow$ đẩy xác suất dự đoán giao dịch đó thành gian lận lên rất cao. Với $V_4$ thì ngược lại: giá trị càng
+    **cao** thì càng đẩy về phía gian lận. Lưu ý: $V_1..V_{28}$ là thành phần PCA đã ẩn danh nên chỉ giải thích được
+    *hướng* ảnh hưởng, không quy được về nghiệp vụ cụ thể. Điều này vẫn giúp ngân hàng giải thích lý do chặn cho khách
+    hàng và cơ quan thanh tra.
 
 ---
 
