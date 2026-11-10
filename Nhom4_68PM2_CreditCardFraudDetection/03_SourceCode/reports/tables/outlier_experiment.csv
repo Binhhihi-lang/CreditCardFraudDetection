@@ -1,0 +1,7 @@
+Cách xử lý ngoại lai,Mô hình,PR-AUC (CV trung bình),Độ lệch chuẩn
+Không cắt đuôi (RobustScaler cho Amount),Logistic Regression,0.7862866165504622,0.03795478401219049
+Không cắt đuôi (RobustScaler cho Amount),XGBoost,0.8344130677016391,0.030183061139506154
+Winsorize 1% - 99%,Logistic Regression,0.7450745276695818,0.05530284668335557
+Winsorize 1% - 99%,XGBoost,0.839412466428108,0.03093933873918478
+Winsorize 0.1% - 99.9%,Logistic Regression,0.7754117192147358,0.044694182894001316
+Winsorize 0.1% - 99.9%,XGBoost,0.8376511195153717,0.031320241142692246

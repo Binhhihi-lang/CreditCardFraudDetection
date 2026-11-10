@@ -1,0 +1,10 @@
+Chỉ tiêu,Giá trị
+Tổng số tiền gian lận trong tập test,14766.310000000001
+Số tiền gian lận chặn được (TP),10954.71
+Số tiền gian lận bị bỏ lọt (FN),3811.6
+Tỷ lệ số tiền gian lận chặn được,0.7418718691399543
+Tỷ lệ ca gian lận chặn được (Recall),0.7684210526315789
+Số cảnh báo phát ra,76.0
+Trong đó cảnh báo nhầm (FP),3.0
+Chi phí xét duyệt giả định (5/cảnh báo),380.0
+Số tiền tiết kiệm ròng = chặn được - chi phí xét duyệt,10574.71

@@ -1,0 +1,38 @@
+# Python virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Dữ liệu lớn không đẩy lên git (vượt giới hạn 100MB của GitHub)
+*.csv
+!sample_transactions.csv
+!data/sample_transactions.csv
+!**/sample_transactions.csv
+!reports/tables/*.csv
+!**/reports/tables/*.csv
+creditcard.csv
+data/creditcard.csv
+
+# Docker
+.docker/
+
+# IDE & Editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+

@@ -1,0 +1,30 @@
+services:
+  # Dịch vụ 1: Webapp Streamlit Live Demo (Khuyến nghị dùng để Demo trước thầy cô)
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nhom4_fraud_detection_app
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    environment:
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+    restart: unless-stopped
+
+  # Dịch vụ 2: Môi trường Jupyter Lab để xem hoặc chạy lại Notebooks
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nhom4_fraud_detection_jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+    command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --ServerApp.token='' --ServerApp.password=''
+    profiles:
+      - jupyter
+

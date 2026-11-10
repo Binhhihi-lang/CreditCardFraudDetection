@@ -1,0 +1,6 @@
+Mô hình,Chiến lược,Phương pháp,Số tổ hợp,PR-AUC tốt nhất (CV),Thời gian (phút),Siêu tham số tốt nhất
+Logistic Regression,SMOTE,GridSearchCV,18,0.8031989429928356,1.9169897261166702,"{""C"": 0.01, ""sampling_strategy"": 0.05}"
+k-NN,Undersampling,GridSearchCV,40,0.7736085947854197,3.674011426399996,"{""n_neighbors"": 41, ""weights"": ""distance"", ""sampling_strategy"": 0.02}"
+Decision Tree,SMOTE,RandomizedSearchCV (n_iter=15),15,0.7581244456786291,4.9808785453499995,"{""sampling_strategy"": 0.3, ""min_samples_leaf"": 50, ""max_depth"": 8, ""criterion"": ""entropy""}"
+Random Forest,SMOTE,RandomizedSearchCV (n_iter=12),12,0.844450510236193,48.742033051599996,"{""sampling_strategy"": 0.05, ""n_estimators"": 300, ""min_samples_leaf"": 10, ""max_samples"": 0.4, ""max_features"": 0.3, ""max_depth"": 12}"
+XGBoost,class_weight,RandomizedSearchCV (n_iter=25),25,0.8541839512403389,6.809094154433342,"{""subsample"": 0.7, ""scale_pos_weight"": 10, ""reg_lambda"": 1, ""n_estimators"": 300, ""min_child_weight"": 3, ""max_depth"": 8, ""learning_rate"": 0.05, ""gamma"": 1, ""colsample_bytree"": 0.6}"
